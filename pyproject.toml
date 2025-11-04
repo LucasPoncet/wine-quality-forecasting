@@ -1,0 +1,78 @@
+[project]
+name = "dl-project"
+version = "0.1.0"
+description = "Fine the hidden gems in wine"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "beautifulsoup4>=4.14.2",
+    "fiona>=1.10.1",
+    "geopandas>=1.1.1",
+    "geopy>=2.4.1",
+    "joblib>=1.5.2",
+    "lightgbm>=4.6.0",
+    "lxml>=6.0.2",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.4",
+    "optuna>=4.5.0",
+    "pandas>=2.3.3",
+    "plotly>=6.3.1",
+    "polars>=1.35.1",
+    "pyproj>=3.7.2",
+    "rapidfuzz>=3.14.3",
+    "requests>=2.32.5",
+    "scikit-learn>=1.7.2",
+    "scipy>=1.16.3",
+    "seaborn>=0.13.2",
+    "selenium>=4.38.0",
+    "shapely>=2.1.2",
+    "torch>=2.9.0",
+    "tqdm>=4.67.1",
+    "webdriver-manager>=4.0.2",
+    "xgboost>=3.1.1",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.8",
+    "nbstripout>=0.8.1",
+    "pandas-stubs>=2.3.2.250926",
+    "pipdeptree>=2.29.0",
+    "pre-commit>=3.6",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.0",
+    "types-pyyaml>=6.0.12.20250915",
+    "types-requests>=2.32.4.20250913",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"] 
+
+[tool.ruff.format]
+docstring-code-format = true
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.isort]
+known-first-party = ["dl_wine", "dl_project", "src"]
+combine-as-imports = true
+force-single-line = false
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = ["src", "."]
+strict = false
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+no_implicit_optional = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true

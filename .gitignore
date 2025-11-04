@@ -16,3 +16,8 @@ data/2025-07-01-delim-parcellaire-aoc-shp/
 plot_weather_preprocessing.py
 number.py
 plot_weather_collection.py
+__pycache__
+.venv
+.vscode
+.ruff_cache
+.pytest_cache
