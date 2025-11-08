@@ -20,6 +20,7 @@ capable of anticipating whether a vintage will be good given the year's climate.
 First install the Python dependencies:
 
 ```bash
+$env:PYTHONPATH = (Get-Location).Path
 pip install -r requirements.txt
 ```
 
