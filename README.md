@@ -1,5 +1,9 @@
 # DL-Wine: Predicting Wine Quality from Weather Patterns
 
+![Python](https://img.shields.io/badge/language-Python-blue)
+![Framework](https://img.shields.io/badge/framework-PyTorch-red)
+![Visualization](https://img.shields.io/badge/plots-Plotly-lightgrey)
+
 This repository contains a set of scripts and notebooks used to predict
 wine quality from historical weather observations. Weather data from Météo‑Franc
 e is merged with wine ratings scraped from Vivino to train deep learning models
