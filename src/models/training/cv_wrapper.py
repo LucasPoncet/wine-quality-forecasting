@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from ClassesML.Scope import ScopeClassifier
+from src.models.components.scope import ScopeClassifier
 from ClassesML.TrainerTabular import TrainerClassifier
 from sklearn.model_selection import StratifiedKFold
 
