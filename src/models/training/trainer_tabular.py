@@ -6,9 +6,6 @@ from torch import nn
 from torch.optim.lr_scheduler import OneCycleLR, ReduceLROnPlateau
 from torch.utils.data import DataLoader, TensorDataset
 
-from src.utils.config_logger import setup_logging
-
-setup_logging()
 logger = logging.getLogger(__name__)
 
 

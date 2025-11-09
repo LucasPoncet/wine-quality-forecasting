@@ -5,7 +5,7 @@ import torch
 from ClassesData.WineDataModule import DatasetLoader
 from ClassesML.Scope import ScopeClassifier
 from ClassesML.TrainerTabular import TrainerClassifier
-from cv_wrapper import cross_val_run
+from src.models.training.cross_validation import cross_val_run
 from model_factory import build_model
 from sklearn.metrics import accuracy_score, classification_report, f1_score
 

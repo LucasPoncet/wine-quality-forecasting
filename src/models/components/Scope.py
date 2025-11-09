@@ -6,9 +6,7 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import LRScheduler, OneCycleLR, ReduceLROnPlateau
 
 from src.models.components.early_stopper import EarlyStopper
-from src.utils.config_logger import setup_logging
 
-setup_logging()
 logger = logging.getLogger(__name__)
 
 

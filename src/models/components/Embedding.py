@@ -3,9 +3,6 @@ import logging
 import pandas as pd
 import torch
 
-from src.utils.config_logger import setup_logging
-
-setup_logging()
 logger = logging.getLogger(__name__)
 
 

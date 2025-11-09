@@ -3,9 +3,6 @@ import logging
 
 import numpy as np
 
-from src.utils.config_logger import setup_logging
-
-setup_logging()
 logger = logging.getLogger(__name__)
 
 
