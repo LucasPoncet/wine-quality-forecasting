@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from ClassesML.Blocks import DenseBlock
-from Utils.Utilities import Utilities
+
+from src.models.components.activation import get_activation
+from src.models.components.blocks import DenseBlock
 
 
 class TabularMLP(nn.Module):
@@ -9,7 +10,7 @@ class TabularMLP(nn.Module):
         super().__init__()
 
         self.hidden_layers_size = hyperparameters["hidden_layers_size"]
-        self.activation = Utilities.get_activation(hyperparameters["activation"])
+        self.activation = get_activation(hyperparameters["activation"])
         self.batch_normalization = hyperparameters["batch_normalization"]
         self.dropout_rate = hyperparameters["dropout_rate"]
         num_numeric_features = hyperparameters["num_numeric_features"]
