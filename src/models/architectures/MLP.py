@@ -1,18 +1,17 @@
 import torch.nn as nn
-from ClassesML.Blocks import DenseBlock
-from Utils.Utilities import Utilities
+
+from src.models.components.activation import get_activation
+from src.models.components.blocks import DenseBlock
 
 
 class MLP(nn.Module):
     def __init__(self, hyperparameters):
-        nn.Module.__init__(self)
+        super().__init__()
 
-        self.hidden_layers_size = hyperparameters["hidden_layers_size"]
-        self.activation = hyperparameters["activation"]
-
-        self.batch_normalization = hyperparameters["batch_normalization"]
-        self.dropout_rate = hyperparameters["dropout_rate"]
-
+        self.hidden_layers_size = hyperparameters.get("hidden_layers_size", [64, 32])
+        self.activation = get_activation(hyperparameters.get("activation", "relu"))
+        self.batch_normalization = hyperparameters.get("batch_normalization", False)
+        self.dropout_rate = hyperparameters.get("dropout_rate", 0.0)
         self.input_dim = hyperparameters["input_dim"]
         self.output_dim = hyperparameters["output_dim"]
 
@@ -21,7 +20,7 @@ class MLP(nn.Module):
         layer = DenseBlock(
             in_size=self.input_dim,
             out_size=self.hidden_layers_size[0],
-            activation=Utilities.get_activation(self.activation),
+            activation=self.activation,
             batch_normalization=self.batch_normalization,
             dropout_rate=self.dropout_rate,
         )
@@ -31,7 +30,7 @@ class MLP(nn.Module):
             layer = DenseBlock(
                 in_size=self.hidden_layers_size[i],
                 out_size=self.hidden_layers_size[i + 1],
-                activation=Utilities.get_activation(self.activation),
+                activation=self.activation,
                 batch_normalization=self.batch_normalization,
                 dropout_rate=self.dropout_rate,
             )
@@ -41,5 +40,6 @@ class MLP(nn.Module):
         self.classifier = nn.Sequential(*self.layers)
 
     def forward(self, x):
+        """Run input through the sequential MLP classifier."""
         x_hat = self.classifier(x)
         return x_hat
