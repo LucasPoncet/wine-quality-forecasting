@@ -1,11 +1,22 @@
+from typing import cast
+
 import torch
 import torch.nn as nn
-from ClassesML.Blocks import AttentiveTransformer, FeatureTransformerBlock
+
+from src.models.components.blocks import AttentiveTransformer, FeatureTransformerBlock
 
 
 class TabNetEncoder(nn.Module):
+    """Core encoder block of TabNet: sequential feature selection and transformation."""
+
     def __init__(
-        self, input_dim, output_dim, n_steps=5, n_shared=2, n_independent=2, virtual_batch_size=128
+        self,
+        input_dim: int,
+        output_dim: int,
+        n_steps: int = 5,
+        n_shared: int = 2,
+        n_independent: int = 2,
+        virtual_batch_size: int = 128,
     ):
         super().__init__()
         self.n_steps = n_steps
@@ -43,19 +54,27 @@ class TabNetEncoder(nn.Module):
         )
 
         self.initial_bn = nn.BatchNorm1d(input_dim)
+        self.collected_masks: list[torch.Tensor] = []
 
     def forward(self, x, return_masks=False):
+        """Forward pass through all TabNet steps."""
         x = self.initial_bn(x)
         prior = torch.ones_like(x)
         outputs = []
         masked_x = x
         self.collected_masks = []
+        outputs = []
+
         for step in range(self.n_steps):
             out = masked_x
+
+            # Shared transformation
             for block in self.shared_feat_transform:
                 out = block(out)
 
-            for block in self.step_feat_transform[step]:  # type:ignore
+            # Step-specific transformation
+            step_blocks: nn.ModuleList = cast(nn.ModuleList, self.step_feat_transform[step])
+            for block in step_blocks:
                 out = block(out)
 
             outputs.append(out)
@@ -64,37 +83,38 @@ class TabNetEncoder(nn.Module):
                 mask = self.attentive_transformers[step](out, prior)
                 self.collected_masks.append(mask)
                 masked_x = mask * x
-                prior = prior * (1 - mask + 1e-5)
+                prior = prior * (1 - mask).clamp_min(1e-5)
+
         if return_masks:
             return torch.stack(outputs, 0).sum(0), self.collected_masks
         return torch.stack(outputs, dim=0).sum(dim=0)
 
 
 class TabNetClassifier(nn.Module):
+    """TabNet classifier variant combining embeddings, encoder, and output layer."""
+
     def __init__(
         self,
-        embedding_sizes,
-        num_numeric_features,
-        output_dim=2,
-        n_steps=5,
-        shared_layers=2,
-        step_layers=2,
-        emb_dropout=0.0,
-        virtual_batch_size=128,
+        embedding_sizes: dict[str, tuple[int, int]],
+        num_numeric_features: int,
+        output_dim: int = 2,
+        n_steps: int = 5,
+        shared_layers: int = 2,
+        step_layers: int = 2,
+        emb_dropout: float = 0.0,
+        virtual_batch_size: int = 128,
     ):
         super().__init__()
 
-        region_vocab_size, region_emb_dim = embedding_sizes["region"]
-        station_vocab_size, station_emb_dim = embedding_sizes["station"]
-        cepages_vocab_size, cepages_emb_dim = embedding_sizes["cepages"]
+        # Build embedding layers
+        self.emb_layers = nn.ModuleDict(
+            {name: nn.Embedding(vocab, dim) for name, (vocab, dim) in embedding_sizes.items()}
+        )
 
-        self.region_emb = nn.Embedding(region_vocab_size, region_emb_dim)
-        self.station_emb = nn.Embedding(station_vocab_size, station_emb_dim)
-        self.cepages_emb = nn.Embedding(cepages_vocab_size, cepages_emb_dim)
-
+        emb_total_dim = sum(dim for _, dim in embedding_sizes.values())
         self.emb_dropout = nn.Dropout(emb_dropout)
 
-        total_input_dim = num_numeric_features + region_emb_dim + station_emb_dim + cepages_emb_dim
+        total_input_dim = num_numeric_features + emb_total_dim
 
         self.encoder = TabNetEncoder(
             input_dim=total_input_dim,
@@ -108,17 +128,9 @@ class TabNetClassifier(nn.Module):
         self.output_layer = nn.Linear(total_input_dim, output_dim)
 
     def forward(self, x_num, x_cat, return_masks=False):
-        # Embedding concat
-        x_emb = torch.cat(
-            [
-                self.region_emb(x_cat[:, 0]),
-                self.station_emb(x_cat[:, 1]),
-                self.cepages_emb(x_cat[:, 2]),
-            ],
-            dim=1,
-        )
-
-        x = torch.cat([x_num, x_emb], dim=1)
+        """Forward pass through TabNet classifier."""
+        emb_tensors = [emb(x_cat[:, i]) for i, emb in enumerate(self.emb_layers.values())]
+        x = torch.cat([x_num] + emb_tensors, dim=1)
         x = self.emb_dropout(x)
 
         features = self.encoder(x)
