@@ -30,7 +30,7 @@ def run_baselines(
         with parallel_backend("loky"):
             clf.fit(X_train, y_train)
 
-        if isinstance(clf, (GridSearchCV, RandomizedSearchCV)):
+        if isinstance(clf, GridSearchCV | RandomizedSearchCV):
             best_est: Pipeline = clf.best_estimator_  # type: ignore[attr-defined]
         else:
             best_est: Pipeline = clf  # type: ignore[assignment]
