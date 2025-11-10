@@ -50,7 +50,7 @@ data/weather_by_year_cleaned/
 
 Wine ratings scraped from Vivino are stored in `data/Wine/`. The region
 metadata is provided in `data/Wine/regions_corrected.csv`.
-An interactive map of the wine regions can be found [🗺️ here](https://lucasponcet.github.io/DL_Project/wine_map.html) !
+An interactive map of the wine regions can be found [🗺️ here](https://lucasponcet.github.io/wine-quality-forecasting/wine_map.html) !
 
 ---
 
