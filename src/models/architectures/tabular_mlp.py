@@ -9,17 +9,17 @@ class TabularMLP(nn.Module):
     def __init__(self, hyperparameters, embedding_sizes):
         super().__init__()
 
-        self.hidden_layers_size = hyperparameters["hidden_layers_size"]
-        self.activation = get_activation(hyperparameters["activation"])
-        self.batch_normalization = hyperparameters["batch_normalization"]
-        self.dropout_rate = hyperparameters["dropout_rate"]
-        num_numeric_features = hyperparameters["num_numeric_features"]
-        output_dim = hyperparameters["output_dim"]
+        self.hidden_layers_size = hyperparameters.get("hidden_layers_size", [128, 64])
+        self.activation = get_activation(hyperparameters.get("activation", "relu"))
+        self.batch_normalization = hyperparameters.get("batch_normalization", False)
+        self.dropout_rate = hyperparameters.get("dropout_rate", 0.1)
+        num_numeric_features = hyperparameters.get("num_numeric_features", 0)
+        output_dim = hyperparameters.get("output_dim", 1)
 
         self.emb_layers = nn.ModuleDict(
             {name: nn.Embedding(vocab, dim) for name, (vocab, dim) in embedding_sizes.items()}
         )
-        emb_total_dim = sum(dim for (_, dim) in embedding_sizes.values())
+        emb_total_dim = sum(dim for (_, dim) in embedding_sizes.values()) if embedding_sizes else 0
 
         total_input_dim = num_numeric_features + emb_total_dim
         layers: list[nn.Module] = []
@@ -49,7 +49,7 @@ class TabularMLP(nn.Module):
 
     def forward(self, x_numeric: torch.Tensor, x_cat: torch.Tensor):
         """Concatenate numeric features and (optional) embeddings then classify."""
-        if self.emb_layers:
+        if x_cat is not None and self.emb_layers:
             emb_tensors = [
                 layer(x_cat[:, idx]) for idx, layer in enumerate(self.emb_layers.values())
             ]
