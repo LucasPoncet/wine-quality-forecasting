@@ -215,10 +215,16 @@ class TransformerEncoderBlock(nn.Module):
         input_dim,
         num_heads,
         expansion_factor: int = 2,
-        activation: type[nn.Module] | None = None,
+        activation: nn.Module | None = None,
         dropout_rate=0.0,
     ):
-        act: nn.Module = activation() if activation is not None else nn.ReLU()
+        if isinstance(activation, nn.Module):
+            act = activation
+        elif activation is not None:
+            act = activation()
+        else:
+            act = nn.ReLU()
+
         super().__init__()
 
         self.mha_layer = nn.MultiheadAttention(
