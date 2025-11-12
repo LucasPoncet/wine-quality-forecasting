@@ -1,9 +1,40 @@
+from collections.abc import Sequence
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.container import BarContainer
+
+
+def plot_accuracy_curves(
+    train_hist: np.ndarray | Sequence[float], valid_hist: np.ndarray | Sequence[float], title: str
+):
+    """
+    Plot training and validation accuracy curves for any model.
+    """
+    plt.figure(figsize=(6, 3))
+    plt.plot(train_hist, label="Train")
+    plt.plot(valid_hist, label="Valid")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy (%)")
+    plt.title(title)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    plt.show()
+
+
+def plot_fold_mean(
+    train_hist_all: np.ndarray, valid_hist_all: np.ndarray, fold_counts: np.ndarray, title: str
+):
+    """
+    Plot average fold curves (e.g., for cross-validation).
+    """
+    mask = fold_counts > 0
+    train_mean = train_hist_all[mask] / fold_counts[mask]
+    valid_mean = valid_hist_all[mask] / fold_counts[mask]
+    plot_accuracy_curves(train_mean, valid_mean, title)
 
 
 def plot_model_comparison(metrics_dict: dict[str, dict[str, float]], save_path: str | None = None):

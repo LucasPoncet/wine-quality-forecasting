@@ -95,7 +95,6 @@ def test_mlp_runner_executes(monkeypatch, mock_loaders, mock_load_parquet, tmp_p
 
     monkeypatch.setattr(mlp_runner, "ScopeClassifier", MagicMock())
     monkeypatch.setattr(mlp_runner, "evaluate_metrics", MagicMock(return_value=(0.8, 0.75, 0.9)))
-    monkeypatch.setattr(mlp_runner.plt, "show", lambda: None)
 
     # Run the actual pipeline
 

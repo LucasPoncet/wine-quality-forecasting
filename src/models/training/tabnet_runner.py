@@ -6,15 +6,12 @@ from typing import cast
 
 import numpy as np
 import torch
-from sklearn.metrics import (
-    precision_recall_curve,
-)
+from sklearn.metrics import classification_report, precision_recall_curve
 from sklearn.model_selection import StratifiedKFold
 from torch import nn
 
-from src.models.architectures.tabular_mlp import TabularMLP
-from src.models.builders.mlp_builder import make_mlp_model
-from src.models.components.embedding import build_cat_mapping
+from src.models.architectures.tabnet import TabNetClassifier
+from src.models.builders.tabnet_builder import make_tabnet_model
 from src.models.components.scope import ScopeClassifier
 from src.models.data.wine_data_module import DatasetLoader
 from src.models.evaluation.metrics_utils import evaluate_metrics
@@ -24,15 +21,18 @@ from src.preprocessing.feature_engineering import add_engineered_features
 from src.visualization.plots.plot_metrics import plot_fold_mean
 
 
-def run_mlp_pipeline(
+def run_tabnet_pipeline(
     train_path: Path,
     test_path: Path,
     feature_ids: Sequence[str],
     device: torch.device,
-    max_epoch: int = 1000,
+    max_epoch: int = 100,
     plot: bool = True,
 ) -> tuple[float, float, float]:
-    """Train an MLP classifier on tabular data with CV and LightGBM baseline."""
+    """
+    Train a TabNet classifier on tabular data with cross-validation.
+    Returns (acc, f1, auc).
+    """
 
     logging.info("=== Loading parquet data ===")
     X_train, y_train, X_test, y_test = load_parquet_dataset(train_path, test_path, "label")
@@ -59,29 +59,6 @@ def run_mlp_pipeline(
         feature_ids=list(feature_ids),
     )
 
-    # Map categorical features to embeddings
-    if cat_cols:
-        mapping, x_cat_train, vocab_sizes = build_cat_mapping(
-            {col: train_ds.tensors[1][:, i].cpu().numpy() for i, col in enumerate(cat_cols)},
-            cat_cols,
-        )
-        _, x_cat_valid, _ = build_cat_mapping(
-            {col: valid_ds.tensors[1][:, i].cpu().numpy() for i, col in enumerate(cat_cols)},
-            cat_cols,
-            mapping,
-        )
-        _, x_cat_test, _ = build_cat_mapping(
-            {col: test_ds.tensors[1][:, i].cpu().numpy() for i, col in enumerate(cat_cols)},
-            cat_cols,
-            mapping,
-        )
-
-        train_ds.tensors = (train_ds.tensors[0], x_cat_train, train_ds.tensors[2])
-        valid_ds.tensors = (valid_ds.tensors[0], x_cat_valid, valid_ds.tensors[2])
-        test_ds.tensors = (test_ds.tensors[0], x_cat_test, test_ds.tensors[2])
-    else:
-        mapping = None
-
     for ds in (train_ds, valid_ds, test_ds):
         ensure_cat_tensor(ds)
         clean_tensor_nan(ds)
@@ -92,17 +69,20 @@ def run_mlp_pipeline(
 
     # ---------------- Model setup ----------------
     hyperparameters = {
-        "hidden_layers_size": [128, 64],
-        "activation": "relu",
-        "batch_normalization": False,
-        "dropout_rate": 0.1,
-        "output_dim": 2,
-        "num_numeric_features": len(num_cols),
-        "learning_rate": 1e-4,
+        "learning_rate": 1.5e-3,
         "max_epoch": max_epoch,
+        "n_steps": 8,
+        "n_d": 64,
+        "n_a": 64,
+        "shared_layers": 1,
+        "step_layers": 2,
+        "gamma": 1.8,
+        "lambda_sparse": 1e-4,
+        "virtual_batch": 32,
+        "emb_dropout": 0.2,
     }
 
-    model, embedding_sizes = make_mlp_model(hyperparameters, cat_cols, mapping)
+    model, embedding_sizes = make_tabnet_model(hyperparameters, num_cols, cat_cols, onehot_mapping)
     scope = ScopeClassifier(model, hyperparameters, steps_per_epoch=1)
 
     # Class weighting
@@ -115,7 +95,6 @@ def run_mlp_pipeline(
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=100)
     y_np = y_train_t.cpu().numpy()
     probs_test_folds, best_thrs = [], []
-
     train_hist_all = np.zeros(max_epoch)
     valid_hist_all = np.zeros(max_epoch)
     fold_counts = np.zeros(max_epoch)
@@ -136,7 +115,19 @@ def run_mlp_pipeline(
         )
 
         trainer = TrainerClassifier(hyperparameters=hyperparameters)
-        model_typed = cast(nn.Module, TabularMLP(hyperparameters, embedding_sizes).to(device))
+        model_typed = cast(
+            nn.Module,
+            TabNetClassifier(
+                embedding_sizes=embedding_sizes,
+                num_numeric_features=len(num_cols),
+                output_dim=2,
+                n_steps=hyperparameters["n_steps"],
+                shared_layers=hyperparameters["shared_layers"],
+                step_layers=hyperparameters["step_layers"],
+                emb_dropout=hyperparameters["emb_dropout"],
+                virtual_batch_size=hyperparameters["virtual_batch"],
+            ).to(device),
+        )
         trainer.set_model(model_typed, device=device)
         assert trainer.model is not None
         trainer.set_scope(ScopeClassifier(trainer.model, hyperparameters, steps_per_epoch=1))
@@ -150,15 +141,12 @@ def run_mlp_pipeline(
             y_valid=y_va,
         )
 
-        assert trainer.run is not None
         train_acc_hist, valid_acc_hist = trainer.run()
-
         L = len(train_acc_hist)
         train_hist_all[:L] += np.array(train_acc_hist)
         valid_hist_all[:L] += np.array(valid_acc_hist)
         fold_counts[:L] += 1
 
-        # Validation inference
         with torch.no_grad():
             p_va = (
                 torch.softmax(trainer.model(x_num_va.to(device), x_cat_va.to(device)), 1)[:, 1]
@@ -179,6 +167,7 @@ def run_mlp_pipeline(
                 .numpy()
             )
         probs_test_folds.append(p_te)
+
     # ---------------- Aggregate results ----------------
     mask = fold_counts > 0
 
@@ -187,7 +176,12 @@ def run_mlp_pipeline(
     y_pred = (probs_test_mean >= best_thr_global).astype(int)
 
     acc, f1, auc = evaluate_metrics(y_test_t.cpu().numpy(), y_pred, probs_test_mean)
-    logging.info(f"MLP Test: acc={acc:.4f}, f1={f1:.4f}, auc={auc:.4f}")
+    logging.info(f"TabNet Test: acc={acc:.4f}, f1={f1:.4f}, auc={auc:.4f}")
+    print(classification_report(y_test_t.cpu().numpy(), y_pred))
+
     if plot:
-        plot_fold_mean(train_hist_all, valid_hist_all, fold_counts, "MLP – mean 5 folds accuracy")
+        plot_fold_mean(
+            train_hist_all, valid_hist_all, fold_counts, "TabNet – mean 5 folds accuracy"
+        )
+
     return acc, f1, auc

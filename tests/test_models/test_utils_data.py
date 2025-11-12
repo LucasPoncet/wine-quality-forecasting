@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
+from torch.utils.data import TensorDataset
 
 from src.models.training import utils_data
 
@@ -77,3 +78,46 @@ def test_clean_tensor_nan_preserves_shape():
 
     for original, cleaned_tensor in zip(ds.tensors, cleaned.tensors, strict=True):
         assert original.shape == cleaned_tensor.shape
+
+
+def test_ensure_cat_tensor_keeps_valid_tensor():
+    """If x_cat already has elements, ensure_cat_tensor should not modify it."""
+    x_num = torch.randn(5, 3)
+    x_cat = torch.randint(0, 10, (5, 2))
+    y = torch.randint(0, 2, (5,))
+    ds = TensorDataset(x_num, x_cat, y)
+
+    utils_data.ensure_cat_tensor(ds)
+    x_num_new, x_cat_new, y_new = ds.tensors
+
+    # Assert that the categorical tensor is unchanged
+    assert torch.equal(x_cat_new, x_cat)
+    assert x_cat_new.shape == (5, 2)
+    assert y_new.shape == (5,)
+
+
+def test_ensure_cat_tensor_creates_empty_column_tensor():
+    """If x_cat has shape (N, 0) or is empty, ensure_cat_tensor should create valid (N, 0)."""
+    x_num = torch.randn(4, 3)
+    y = torch.randint(0, 2, (4,))
+    ds = TensorDataset(x_num, torch.empty((4, 0), dtype=torch.long), y)  # valid empty (N, 0)
+
+    utils_data.ensure_cat_tensor(ds)
+    _, x_cat_new, _ = ds.tensors
+
+    assert x_cat_new.shape == (4, 0)
+    assert x_cat_new.dtype == torch.long
+
+
+def test_ensure_cat_tensor_handles_single_sample():
+    """Ensure works for single-sample dataset with empty categorical tensor."""
+    x_num = torch.randn(1, 5)
+    y = torch.tensor([1])
+    ds = TensorDataset(x_num, torch.empty((1, 0), dtype=torch.long), y)
+
+    utils_data.ensure_cat_tensor(ds)
+    _, x_cat_new, _ = ds.tensors
+
+    assert x_cat_new.shape == (1, 0)
+    assert x_cat_new.numel() == 0
+    assert x_cat_new.dtype == torch.long

@@ -4,6 +4,9 @@ from src.models.architectures.tabular_mlp import TabularMLP
 
 
 def make_mlp_model(hyperparams, cat_cols, mapping=None):
+    """
+    Build an MLP model and compute embedding sizes for categorical columns.
+    """
     if not cat_cols or mapping is None:
         embedding_sizes = {}
     else:
