@@ -22,6 +22,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.preprocessing.utils.weather_utils import attach_weather_pandas
+from src.utils.config_logger import setup_logging
 from src.visualization.plots.plot_metrics import plot_histogram
 
 logger = logging.getLogger(__name__)
@@ -116,6 +117,7 @@ def merge_wine_and_weather(
 
 
 def main():
+    setup_logging()
     base = Path("data")
     merge_wine_and_weather(
         regions_csv=base / "wine/regions.csv",
