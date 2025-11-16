@@ -146,9 +146,7 @@ data/Wine/region_centroids_from_wines_corrected.csv
 ```
 
 An interactive wine region map is published at:
-
-- `docs/wine_map.html` (local copy, if present)
-- GitHub Pages: https://lucasponcet.github.io/wine-quality-forecasting/wine_map.html
+[Wine map 🍷](https://lucasponcet.github.io/wine-quality-forecasting/wine_map.html)
 
 ---
 
