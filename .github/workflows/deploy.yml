@@ -24,12 +24,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd landing
+          cd wine-landing
           npm install
 
       - name: Build static export
         run: |
-          cd landing
+          cd wine-landing
           npm run build
 
       - name: Upload artifact
