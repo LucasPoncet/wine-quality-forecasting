@@ -100,3 +100,30 @@ def plot_model_comparison(metrics_dict: dict[str, dict[str, float]], save_path: 
         print(f"✅ Saved plot to {save_path}")
 
     plt.show()
+
+
+def plot_histogram(
+    data,
+    bins: int = 50,
+    title: str = "Histogram",
+    xlabel: str = "",
+    ylabel: str = "",
+    out_path: Path | None = None,
+    xlim: tuple[float, float] | None = None,
+) -> None:
+    """Generic histogram plotter for quick data distribution visualization."""
+    plt.figure(figsize=(10, 6))
+    plt.hist(data, bins=bins, color="blue", alpha=0.7, edgecolor="black")
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if xlim:
+        plt.xlim(*xlim)
+    plt.grid(axis="y", alpha=0.75)
+    plt.tight_layout()
+
+    if out_path:
+        plt.savefig(out_path, dpi=150)
+        plt.close()
+    else:
+        plt.show()
