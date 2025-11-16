@@ -293,7 +293,7 @@ docs/
 ```
 
 ```markdown
-For full methodological details, see the [technical report](docs/report/wine_quality_report.pdf).
+For full methodological details, see the [technical report](https://lucasponcet.github.io/report/wine_quality_report.pdf).
 ```
 
 ---
