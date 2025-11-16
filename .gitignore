@@ -1,4 +1,4 @@
-# Données météo et dérivées
+# Weather Data
 data/weather*/
 data/weather_by_year/
 data/weather_features/
@@ -7,18 +7,37 @@ data/Usable_station_per_department_2010_2023/
 # Shapefile AOC complet
 data/2025-07-01-delim-parcellaire-aoc-shp/
 
-
 # Notebooks
 *.ipynb
 
-
-#Useless files
+# Useless files
 plot_weather_preprocessing.py
 number.py
 plot_weather_collection.py
-__pycache__
-.venv
-.vscode
-.ruff_cache
-.pytest_cache
-.mypy_cache
+
+# Python caches and environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.pickle
+*.egg-info/
+*.ipynb_checkpoints
+.venv/
+env/
+venv/
+
+# VSCode & tool caches
+.vscode/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Node / Next.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.next/
