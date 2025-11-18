@@ -29,7 +29,7 @@ export default function WineQualityPage() {
               variant="outline"
               className="w-full rounded-full px-8 py-6 text-base sm:w-auto"
             >
-              <a href="/wine_map.html">🍷 Interactive Wine Map</a>
+              <a href="wine_map.html">🍷 Interactive Wine Map</a>
             </Button>
             <Button
               asChild
@@ -164,7 +164,7 @@ export default function WineQualityPage() {
           </h2>
           <div className="rounded-3xl border border-border bg-white p-8 shadow-lg">
             <img
-              src="/docs/model_architecture.svg"
+              src="docs/model_architecture.svg"
               alt="Model Architecture Diagram"
               className="mx-auto w-full"
             />
