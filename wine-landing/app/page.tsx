@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import Image from "next/image";
 
 export default function WineQualityPage() {
   return (
@@ -28,9 +29,7 @@ export default function WineQualityPage() {
               variant="outline"
               className="w-full rounded-full px-8 py-6 text-base sm:w-auto"
             >
-              <a href="wine-quality-forecasting//wine_map.html">
-                🍷 Interactive Wine Map
-              </a>
+              <a href="/wine_map.html">🍷 Interactive Wine Map</a>
             </Button>
             <Button
               asChild
